@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房租管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: relative;
+            background: white;
+            margin: 50px auto;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background: #f8f9ff;
+            transition: background 0.3s;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-overdue {
+            background: #f8d7da;
+            color: #721c24;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            margin: 0 3px;
+            font-size: 14px;
+            border-radius: 6px;
+        }
+
+        .btn-pay {
+            background: #28a745;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+            animation: slideIn 0.5s ease;
+        }
+
+        .alert-overdue {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert-today {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .error {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .days-overdue {
+            font-size: 12px;
+            color: #721c24;
+            margin-top: 3px;
+        }
+    </style>
+
+<style>
+/* Responsive helpers added by assistant */
+.responsive-table { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+.responsive-table table { width:100%; border-collapse: collapse; }
+table { table-layout: auto; max-width:100%; }
+img { max-width:100%; height:auto; display:block; }
+@media (max-width:600px) {
+  body { font-size: 14px; }
+  /* make inputs/buttons full width on small screens */
+  input, button, select, textarea { width:100% !important; box-sizing: border-box; }
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏠 房租管理系统</h1>
+        
+        <div id="alerts"></div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="totalRooms">0</div>
+                <div class="stat-label">总房间数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingRent">0</div>
+                <div class="stat-label">待收租金</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="overdueCount">0</div>
+                <div class="stat-label">逾期房间</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="monthlyTotal">¥0</div>
+                <div class="stat-label">本月应收</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="openModal()">➕ 添加房间</button>
+            <label for="importExcel" class="file-label">
+                📥 导入Excel
+            </label>
+            <input type="file" id="importExcel" accept=".xlsx,.xls" onchange="importExcel(event)">
+            <button onclick="exportExcel()">📤 导出Excel</button>
+            <button onclick="checkDueRents()">🔔 检查到期租金</button>
+            <button onclick="clearAllData()" style="background: #dc3545;">🗑️ 清空数据</button>
+        </div>
+
+        <div class="responsive-table">
+<table id="rentTable">
+            <thead>
+                <tr>
+                    <th>房间号</th>
+                    <th>租客姓名</th>
+                    <th>月租金</th>
+                    <th>收租日期</th>
+                    <th>上次收租</th>
+                    <th>状态</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="rentTableBody"></tbody>
+        </table>
+</div>
+    </div>
+
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="margin-bottom: 20px; color: #333;">添加/编辑房间</h2>
+            <form id="roomForm">
+                <div class="form-group">
+                    <label>房间号</label>
+                    <input type="text" id="roomNumber" required placeholder="例如: 101">
+                    <div class="error" id="roomNumberError">房间号已存在，请使用其他房间号</div>
+                </div>
+                <div class="form-group">
+                    <label>租客姓名</label>
+                    <input type="text" id="tenantName" required placeholder="请输入租客姓名">
+                </div>
+                <div class="form-group">
+                    <label>月租金（元）</label>
+                    <input type="number" id="monthlyRent" min="0" required placeholder="请输入月租金">
+                </div>
+                <div class="form-group">
+                    <label>收租日期（每月几号）</label>
+                    <input type="number" id="rentDay" min="1" max="31" required placeholder="1-31">
+                </div>
+                <div class="form-group">
+                    <label>上次收租日期</label>
+                    <input type="date" id="lastPayment">
+                    <div class="error" id="lastPaymentError">日期不能是未来日期</div>
+                </div>
+                <button type="submit" style="width: 100%; margin-top: 10px;">保存</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let rooms = [];
+        let editingIndex = -1;
+        let originalRoomNumber = '';
+
+        // 初始化
+        function init() {
+            const savedData = localStorage.getItem('rentRooms');
+            if (savedData) {
+                try {
+                    rooms = JSON.parse(savedData);
+                } catch (e) {
+                    console.error('解析存储数据失败:', e);
+                    rooms = [];
+                }
+            }
+            renderTable();
+            updateStats();
+            checkDueRents();
+        }
+
+        // 保存数据
+        function saveData() {
+            localStorage.setItem('rentRooms', JSON.stringify(rooms));
+        }
+
+        // 打开模态框
+        function openModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('roomForm').reset();
+            document.getElementById('roomNumberError').style.display = 'none';
+            document.getElementById('lastPaymentError').style.display = 'none';
+            editingIndex = -1;
+            originalRoomNumber = '';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
+        // 验证表单
+        function validateForm() {
+            const roomNumber = document.getElementById('roomNumber').value.trim();
+            const lastPayment = document.getElementById('lastPayment').value;
+            const today = new Date().toISOString().split('T')[0];
+            
+            // 检查房间号是否已存在（编辑模式除外）
+            if (editingIndex === -1 || roomNumber !== originalRoomNumber) {
+                const isDuplicate = rooms.some(room => room.roomNumber === roomNumber);
+                if (isDuplicate) {
+                    document.getElementById('roomNumberError').style.display = 'block';
+                    return false;
+                }
+            }
+            
+            // 检查上次收租日期是否是未来日期
+            if (lastPayment && lastPayment > today) {
+                document.getElementById('lastPaymentError').style.display = 'block';
+                return false;
+            }
+            
+            return true;
+        }
+
+        // 添加/编辑房间
+        document.getElementById('roomForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) return;
+            
+            const room = {
+                roomNumber: document.getElementById('roomNumber').value.trim(),
+                tenantName: document.getElementById('tenantName').value.trim(),
+                monthlyRent: parseFloat(document.getElementById('monthlyRent').value),
+                rentDay: parseInt(document.getElementById('rentDay').value),
+                lastPayment: document.getElementById('lastPayment').value || null
+            };
+
+            if (editingIndex >= 0) {
+                rooms[editingIndex] = room;
+            } else {
+                rooms.push(room);
+            }
+
+            saveData();
+            renderTable();
+            updateStats();
+            closeModal();
+            showAlert(editingIndex >= 0 ? '房间信息更新成功！' : '房间添加成功！', 'success');
+        });
+
+        // 显示提示信息
+        function showAlert(message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type === 'success' ? 'alert-today' : type === 'error' ? 'alert-overdue' : ''}`;
+            alertDiv.innerHTML = `📢 ${message}`;
+            
+            const alertsContainer = document.getElementById('alerts');
+            alertsContainer.appendChild(alertDiv);
+            
+            // 5秒后自动移除提示
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('rentTableBody');
+            tbody.innerHTML = '';
+
+            if (rooms.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 20px;">暂无房间数据</td></tr>';
+                return;
+            }
+
+            rooms.forEach((room, index) => {
+                const tr = document.createElement('tr');
+                const statusInfo = getPaymentStatus(room);
+                
+                tr.innerHTML = `
+                    <td>${room.roomNumber}</td>
+                    <td>${room.tenantName}</td>
+                    <td>¥${room.monthlyRent.toFixed(2)}</td>
+                    <td>每月${room.rentDay}号</td>
+                    <td>${room.lastPayment || '无记录'}</td>
+                    <td>
+                        <span class="status status-${statusInfo.status}">${statusInfo.text}</span>
+                        ${statusInfo.daysOverdue > 0 ? `<div class="days-overdue">逾期 ${statusInfo.daysOverdue} 天</div>` : ''}
+                    </td>
+                    <td>
+                        <button class="action-btn btn-pay" onclick="markPaid(${index})" ${statusInfo.status === 'paid' ? 'disabled style="opacity:0.5;"' : ''}>收租</button>
+                        <button class="action-btn btn-edit" onclick="editRoom(${index})">编辑</button>
+                        <button class="action-btn btn-delete" onclick="deleteRoom(${index})">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 获取支付状态（修复后的逻辑）
+        function getPaymentStatus(room) {
+            if (!room.lastPayment) {
+                // 从未支付过
+                const today = new Date();
+                const rentDay = room.rentDay;
+                const currentDay = today.getDate();
+                
+                if (currentDay > rentDay) {
+                    const daysOverdue = currentDay - rentDay;
+                    return { status: 'overdue', text: '已逾期', daysOverdue };
+                } else {
+                    return { status: 'pending', text: '待支付', daysOverdue: 0 };
+                }
+            }
+            
+            const today = new Date();
+            const lastPayment = new Date(room.lastPayment);
+            const rentDay = room.rentDay;
+            
+            // 计算上次支付月份和当前月份之间的差异
+            const monthsDiff = (today.getFullYear() - lastPayment.getFullYear()) * 12 + 
+                              (today.getMonth() - lastPayment.getMonth());
+            
+            if (monthsDiff === 0) {
+                // 本月已支付
+                return { status: 'paid', text: '已支付', daysOverdue: 0 };
+            } else if (monthsDiff > 0) {
+                // 上次支付是之前月份
+                const currentDay = today.getDate();
+                
+                if (currentDay > rentDay) {
+                    const daysOverdue = currentDay - rentDay;
+                    return { status: 'overdue', text: '已逾期', daysOverdue };
+                } else {
+                    return { status: 'pending', text: '待支付', daysOverdue: 0 };
+                }
+            }
+            
+            // 异常情况：上次支付日期是未来日期
+            return { status: 'pending', text: '待支付', daysOverdue: 0 };
+        }
+
+        // 标记已支付
+        function markPaid(index) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth() + 1;
+            const day = today.getDate();
+            const dateString = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+            
+            rooms[index].lastPayment = dateString;
+            saveData();
+            renderTable();
+            updateStats();
+            showAlert(`房间 ${rooms[index].roomNumber} 租金已标记为已支付！`, 'success');
+        }
+
+        // 编辑房间
+        function editRoom(index) {
+            const room = rooms[index];
+            document.getElementById('roomNumber').value = room.roomNumber;
+            document.getElementById('tenantName').value = room.tenantName;
+            document.getElementById('monthlyRent').value = room.monthlyRent;
+            document.getElementById('rentDay').value = room.rentDay;
+            document.getElementById('lastPayment').value = room.lastPayment || '';
+            
+            editingIndex = index;
+            originalRoomNumber = room.roomNumber;
+            
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('roomNumberError').style.display = 'none';
+            document.getElementById('lastPaymentError').style.display = 'none';
+        }
+
+        // 删除房间
+        function deleteRoom(index) {
+            if (confirm(`确定要删除房间 ${rooms[index].roomNumber} 的信息吗？`)) {
+                const roomNumber = rooms[index].roomNumber;
+                rooms.splice(index, 1);
+                saveData();
+                renderTable();
+                updateStats();
+                showAlert(`房间 ${roomNumber} 已删除！`, 'success');
+            }
+        }
+
+        // 清空所有数据
+        function clearAllData() {
+            if (confirm('确定要清空所有数据吗？此操作不可恢复！')) {
+                rooms = [];
+                saveData();
+                renderTable();
+                updateStats();
+                showAlert('所有数据已清空！', 'success');
+            }
+        }
+
+        // 更新统计
+        function updateStats() {
+            document.getElementById('totalRooms').textContent = rooms.length;
+            
+            let pendingCount = 0;
+            let overdueCount = 0;
+            let monthlyTotal = 0;
+            
+            rooms.forEach(room => {
+                const statusInfo = getPaymentStatus(room);
+                if (statusInfo.status === 'pending') pendingCount++;
+                if (statusInfo.status === 'overdue') overdueCount++;
+                if (statusInfo.status !== 'paid') monthlyTotal += room.monthlyRent;
+            });
+            
+            document.getElementById('pendingRent').textContent = pendingCount;
+            document.getElementById('overdueCount').textContent = overdueCount;
+            document.getElementById('monthlyTotal').textContent = `¥${monthlyTotal.toFixed(2)}`;
+        }
+
+        // 检查到期租金
+        function checkDueRents() {
+            const alerts = document.getElementById('alerts');
+            alerts.innerHTML = '';
+            
+            const today = new Date();
+            const currentDay = today.getDate();
+            let overdueRooms = [];
+            let dueToday = [];
+            
+            rooms.forEach(room => {
+                const statusInfo = getPaymentStatus(room);
+                if (statusInfo.status === 'overdue') {
+                    overdueRooms.push(room);
+                } else if (room.rentDay === currentDay && statusInfo.status !== 'paid') {
+                    dueToday.push(room);
+                }
+            });
+            
+            if (overdueRooms.length > 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-overdue';
+                alert.innerHTML = `⚠️ <strong>逾期提醒：</strong>房间 ${overdueRooms.map(r => r.roomNumber).join('、')} 租金已逾期，请尽快收取！`;
+                alerts.appendChild(alert);
+            }
+            
+            if (dueToday.length > 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-today';
+                alert.innerHTML = `📅 <strong>今日收租：</strong>房间 ${dueToday.map(r => r.roomNumber).join('、')} 今日需要收租！`;
+                alerts.appendChild(alert);
+            }
+            
+            if (overdueRooms.length === 0 && dueToday.length === 0) {
+                showAlert('目前没有逾期或今日到期的租金！', 'success');
+            }
+        }
+
+        // 导入Excel
+        function importExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = e.target.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                    
+                    if (jsonData.length === 0) {
+                        showAlert('Excel文件中没有数据！', 'error');
+                        return;
+                    }
+                    
+                    const importedRooms = jsonData.map(row => ({
+                        roomNumber: String(row['房间号'] || row.roomNumber || ''),
+                        tenantName: String(row['租客姓名'] || row.tenantName || ''),
+                        monthlyRent: parseFloat(row['月租金'] || row.monthlyRent || 0),
+                        rentDay: parseInt(row['收租日期'] || row.rentDay || 1),
+                        lastPayment: row['上次收租'] || row.lastPayment || null
+                    }));
+                    
+                    // 检查重复房间号
+                    const duplicateRooms = importedRooms.filter(newRoom => 
+                        rooms.some(existingRoom => existingRoom.roomNumber === newRoom.roomNumber)
+                    );
+                    
+                    if (duplicateRooms.length > 0) {
+                        if (!confirm(`导入的数据中包含 ${duplicateRooms.length} 个重复房间号，是否覆盖现有数据？`)) {
+                            return;
+                        }
+                        
+                        // 移除重复的房间
+                        rooms = rooms.filter(existingRoom => 
+                            !importedRooms.some(newRoom => newRoom.roomNumber === existingRoom.roomNumber)
+                        );
+                    }
+                    
+                    // 添加新房间
+                    rooms = [...rooms, ...importedRooms];
+                    saveData();
+                    renderTable();
+                    updateStats();
+                    showAlert(`成功导入 ${importedRooms.length} 条房间数据！`, 'success');
+                    
+                    // 重置文件输入
+                    event.target.value = '';
+                } catch (error) {
+                    console.error('导入Excel失败:', error);
+                    showAlert('导入Excel失败，请检查文件格式！', 'error');
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        // 导出Excel
+        function exportExcel() {
+            if (rooms.length === 0) {
+                showAlert('没有数据可导出！', 'error');
+                return;
+            }
+            
+            const exportData = rooms.map(room => {
+                const statusInfo = getPaymentStatus(room);
+                return {
+                    '房间号': room.roomNumber,
+                    '租客姓名': room.tenantName,
+                    '月租金': room.monthlyRent,
+                    '收租日期': room.rentDay,
+                    '上次收租': room.lastPayment || '',
+                    '状态': statusInfo.text,
+                    '逾期天数': statusInfo.daysOverdue > 0 ? statusInfo.daysOverdue : ''
+                };
+            });
+            
+            try {
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '房租管理');
+                XLSX.writeFile(wb, `房租管理_${new Date().toLocaleDateString().replace(/\//g, '-')}.xlsx`);
+                showAlert('数据导出成功！', 'success');
+            } catch (error) {
+                console.error('导出Excel失败:', error);
+                showAlert('导出Excel失败！', 'error');
+            }
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // 页面加载时初始化
+        init();
+        
+        // 每天自动检查一次
+        setInterval(checkDueRents, 24 * 60 * 60 * 1000);
+    </script>
+</body>
+</html>
